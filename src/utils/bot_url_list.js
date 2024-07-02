@@ -19,4 +19,9 @@ export const botUrlList = [
     bot: "tapswap_mirror_bot",
     url: "https://api.tapswap.ai/api/",
   },
+  //KIBBLE
+  {
+    bot: "KibbleClickBot",
+    url: "https://kibble-game-dev.netlify.app/",
+  },
 ];
