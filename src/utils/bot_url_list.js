@@ -1,27 +1,17 @@
 export const botUrlList = [
-  //PIXELFARM
-  {
-    bot: "pixelfarm_bot",
-    url: "https://web.pixelxfarm.com/index.html",
-  },
-  //METABOSS
-  {
-    bot: "metaboss_2024_bot",
-    url: "https://apiv2.metaboss.xyz:2000/game",
-  },
   //BLUM
   {
     bot: "BlumCryptoBot",
     url: "https://gateway.blum.codes/",
   },
-  //TAPSWAP
+  //CatsGang
   {
-    bot: "tapswap_mirror_bot",
-    url: "https://api.tapswap.ai/api/",
+    bot: "catsgang_bot",
+    url: "https://cats-backend-cxblew-prod.up.railway.app",  
   },
-  //KIBBLE
-  {
-    bot: "KibbleClickBot",
-    url: "https://kibble-game-dev.netlify.app/",
-  },
+  //#ISI DENGAN DATA BOT YANG INGING DITAMBAHKAN
+  // {
+  //   bot: "",
+  //   url: "",
+  // },
 ];
