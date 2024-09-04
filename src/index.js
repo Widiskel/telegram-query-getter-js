@@ -1,5 +1,5 @@
 import input from "input"; // npm i input
-import { Config } from "../config.js";
+import { Config } from "../config.js"; // Adjusted the path to the config.js file
 import { Core } from "./processor/core.js";
 import { Helper } from "./utils/helper.js";
 import logger from "./utils/logger.js";
@@ -19,13 +19,13 @@ async function sessionCreation() {
   if (sessionList.length == 0) {
     ctx += "<empty> \n \nPlease enter Session Name :";
   } else {
-    ctx +=
-      "\n \nYou alreay have sessions, cancel(CTRL+C) or create new Session :";
+    ctx += "\n \nYou already have sessions, cancel(CTRL+C) or create new Session :";
   }
 
   const newSession = await input.text(ctx);
   sessionName = Helper.createDir(newSession);
 }
+
 async function sessionSelection() {
   const sessionList = Helper.getSession("sessions");
   let ctx = "Your session List :\n \n";
@@ -41,7 +41,7 @@ async function sessionSelection() {
 
   if (selectedSession) {
     sessionName = "sessions/" + selectedSession;
-    console.info(`Using sessions ${selectedSession}`);
+    console.info(`Using session ${selectedSession}`);
   } else {
     console.error("Invalid choice. Please try again.");
     await sessionSelection();
@@ -50,7 +50,7 @@ async function sessionSelection() {
 
 async function onBoarding() {
   const choice = await input.text(
-    "Welcome to Telegram Query Getter \nBy : Widiskel \n \nLets getting started. \n1. Create Session. \n2. Reset Sessions \n3. Get Query \n \nInput your choice :"
+    "Welcome to Telegram Query Getter \nBy : Widiskel \n \nLet's get started. \n1. Create Session. \n2. Reset Sessions \n3. Get Query \n \nInput your choice :"
   );
   if (choice == 1) {
     await sessionCreation();
@@ -59,7 +59,7 @@ async function onBoarding() {
     await onBoarding();
   } else if (choice == 3) {
     if (Helper.getSession(sessionName)?.length == 0) {
-      console.info("You don't have any sessions, please create first");
+      console.info("You don't have any sessions, please create one first");
       await onBoarding();
     } else {
       await sessionSelection();
@@ -75,40 +75,46 @@ async function onBoarding() {
   try {
     logger.info(`BOT STARTED`);
     await onBoarding();
-    logger.info(`Using Session : ${sessionName}`);
-    if (
-      Config.TELEGRAM_APP_ID == undefined ||
-      Config.TELEGRAM_APP_HASH == undefined
-    ) {
+    logger.info(`Using session: ${sessionName}`);
+
+    // Ensure that API ID and Hash are configured in the config.js file
+    if (!Config.TELEGRAM_APP_ID || !Config.TELEGRAM_APP_HASH) {
       throw new Error(
-        "Please configure your TELEGRAM_APP_ID and TELEGRAM_APP_HASH first"
+        "Please configure your TELEGRAM_APP_ID and TELEGRAM_APP_HASH in the config.js file"
       );
     }
+
+    // Create session
     storeSession = new StoreSession(sessionName);
+
+    // Initialize Telegram client with the credentials from config.js
     const client = new TelegramClient(
       storeSession,
-      Config.TELEGRAM_APP_ID,
+      Number(Config.TELEGRAM_APP_ID), // Convert TELEGRAM_APP_ID to a number
       Config.TELEGRAM_APP_HASH,
       {
         connectionRetries: 5,
       }
     );
 
+    // Start the Telegram client and request login details from the user
     await client.start({
       phoneNumber: async () =>
-        await input.text("Enter your Telegram Phone Number ?"),
-      password: async () => await input.text("Enter your Telegram Password?"),
+        await input.text("Enter your Telegram Phone Number: "),
+      password: async () => await input.text("Enter your Telegram Password: "),
       phoneCode: async () =>
-        await input.text("Enter your Telegram Verification Code ?"),
+        await input.text("Enter the Telegram Verification Code you received: "),
       onError: (err) => console.log(err),
     });
+
     console.log("Connected.");
     logger.info(`Session ${sessionName} - Connected`);
-    storeSession.save();
+    storeSession.save(); // Save session
 
+    // Start processing queries using the Core class
     new Core(client, sessionName).process();
   } catch (error) {
-    console.log(error);
+    console.error(error);
     logger.error(`Session ${sessionName} Error - ${error}`);
     logger.info(`BOT STOPPED`);
   }
