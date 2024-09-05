@@ -35,7 +35,7 @@ export class Core {
       return false;
     } else {
       console.error("Invalid choice, Please try again");
-      await this.mode();
+      return await this.mode();
     }
   }
 
@@ -59,21 +59,28 @@ export class Core {
 
   async resolvePeer() {
     logger.info(`Session ${this.session} - Resolving Peer`);
-    while (this.peer == undefined) {
+    let attempts = 0;
+    const maxAttempts = 5;
+
+    while (this.peer == undefined && attempts < maxAttempts) {
       try {
         this.peer = await this.client.getEntity(this.bot);
         break;
       } catch (error) {
         if (error instanceof FloodWaitError) {
           const fls = error.seconds;
-
-          logger.warn(
-            `${this.client.session.serverAddress} | FloodWait ${error}`
-          );
+          logger.warn(`${this.client.session.serverAddress} | FloodWait ${error}`);
           logger.info(`${this.client.session.serverAddress} | Sleep ${fls}s`);
-
           await Helper.sleep((fls + 3) * 1000);
+        } else if (error.message.includes('TIMEOUT')) {
+          attempts++;
+          logger.warn(`Timeout Error - Attempt ${attempts} of ${maxAttempts}`);
+          if (attempts >= maxAttempts) {
+            throw new Error('Maximum attempts reached for resolving peer');
+          }
+          await Helper.sleep(5000); // Wait before retrying
         } else {
+          console.error(`Error resolving peer: ${error.message}`);
           throw error;
         }
       }
@@ -85,17 +92,16 @@ export class Core {
       logger.info(`Session ${this.session} - Processing`);
       this.user = await this.client.getMe();
       console.log("User Phone : " + this.user.phone);
+
       if (await this.mode()) {
-        this.bot = await input.text("Enter bot username you want to connect ?");
-        this.url = await input.text(
-          "Enter bot Web apps URL you want to connect ?"
-        );
+        this.bot = await input.text("Enter bot username you want to connect?");
+        this.url = await input.text("Enter bot Web apps URL you want to connect?");
       } else {
         await this.botList();
       }
 
-      if (!this.bot && !this.url) {
-        throw Error("You need to set Bot Username and Bot Web Apps URL");
+      if (!this.bot || !this.url) {
+        throw new Error("You need to set Bot Username and Bot Web Apps URL");
       }
 
       const user = await this.client.getMe();
@@ -109,6 +115,7 @@ export class Core {
       console.log(`BOT    :  ${this.peer ? this.peer.username : "??"}`);
       console.log();
       logger.info(`Session ${this.session} - Connecting to Webview`);
+      
       const webView = await this.client.invoke(
         new Api.messages.RequestWebView({
           peer: this.peer,
@@ -134,10 +141,12 @@ export class Core {
       console.log();
       logger.info(`Session ${this.session} Data - ${tgData}`);
       logger.info(`Session ${this.session} - Complete`);
+
       await this.client.disconnect();
       logger.info(`BOT FINISH`);
     } catch (error) {
       console.error("Error during process execution:", error);
+      logger.error(`Session ${this.session} Error - ${error.message}`);
       throw error;
     }
   }

@@ -8,72 +8,85 @@ export class Helper {
   };
 
   static getTelegramQuery(url, type) {
-    const hashIndex = url.indexOf("#");
-    if (hashIndex === -1) {
-      throw new Error("No query string found in the URL.");
-    }
+    try {
+      const hashIndex = url.indexOf("#");
+      if (hashIndex === -1) {
+        throw new Error("No query string found in the URL.");
+      }
 
-    const queryString = url.substring(hashIndex + 1);
-    const decodedQueryString = queryString.split("&");
-    const param = decodedQueryString[0]
-      .split("&")[0]
-      .replace("tgWebAppData=", "");
+      const queryString = url.substring(hashIndex + 1);
+      const decodedQueryString = queryString.split("&");
+      const param = decodedQueryString[0].split("=")[1]; // Ensure correct extraction
 
-    if (!param) {
-      throw new Error("Param not found in the query string.");
-    }
+      if (!param) {
+        throw new Error("Param not found in the query string.");
+      }
 
-    if (type == "1") {
-      return param;
-    } else if (type == "2") {
-      return this.decodeQueryString(param);
-    } else {
-      const newParam = this.decodeQueryString(param);
-      return this.jsonToInitParam(newParam);
+      if (type == "1") {
+        return param;
+      } else if (type == "2") {
+        return this.decodeQueryString(param);
+      } else {
+        const newParam = this.decodeQueryString(param);
+        return this.jsonToInitParam(newParam);
+      }
+    } catch (error) {
+      console.error("Error in getTelegramQuery:", error.message);
+      throw error;
     }
   }
 
   static jsonToInitParam(dataString) {
-    const newData = parse(dataString);
+    try {
+      const newData = parse(dataString);
 
-    if (newData.user) {
-      const userObject = JSON.parse(newData.user);
-      newData.user = encodeURIComponent(JSON.stringify(userObject));
+      if (newData.user) {
+        const userObject = JSON.parse(newData.user);
+        newData.user = encodeURIComponent(JSON.stringify(userObject));
+      }
+
+      const resultArray = [];
+      for (const [key, value] of Object.entries(newData)) {
+        resultArray.push(`${key}=${value}`);
+      }
+      const result = resultArray.join("&");
+
+      return result;
+    } catch (error) {
+      console.error("Error in jsonToInitParam:", error.message);
+      throw error;
     }
-
-    const resultArray = [];
-    for (const [key, value] of Object.entries(newData)) {
-      resultArray.push(`${key}=${value}`);
-    }
-    const result = resultArray.join("&");
-
-    return result;
   }
 
   static decodeQueryString(encodedString) {
-    const decodedString = decodeURIComponent(encodedString);
-    const paramsArray = decodedString.split("&");
-    const paramsObject = {};
+    try {
+      const decodedString = decodeURIComponent(encodedString);
+      const paramsArray = decodedString.split("&");
+      const paramsObject = {};
 
-    paramsArray.forEach((param) => {
-      const [key, value] = param.split("=");
-      if (key === "user") {
-        paramsObject[key] = JSON.parse(decodeURIComponent(value));
-      } else {
-        paramsObject[key] = value;
-      }
-    });
+      paramsArray.forEach((param) => {
+        const [key, value] = param.split("=");
+        if (key === "user") {
+          paramsObject[key] = JSON.parse(decodeURIComponent(value));
+        } else {
+          paramsObject[key] = value;
+        }
+      });
 
-    const resultArray = [];
-    for (const [key, value] of Object.entries(paramsObject)) {
-      if (key === "user") {
-        resultArray.push(`${key}=${JSON.stringify(value)}`);
-      } else {
-        resultArray.push(`${key}=${value}`);
+      const resultArray = [];
+      for (const [key, value] of Object.entries(paramsObject)) {
+        if (key === "user") {
+          resultArray.push(`${key}=${JSON.stringify(value)}`);
+        } else {
+          resultArray.push(`${key}=${value}`);
+        }
       }
+
+      return resultArray.join("&");
+    } catch (error) {
+      console.error("Error in decodeQueryString:", error.message);
+      throw error;
     }
-
-    return resultArray.join("&");
   }
 
   static getSession(sessionName) {
@@ -85,7 +98,8 @@ export class Helper {
       });
       return session;
     } catch (error) {
-      throw Error(`Error reading sessions directory: ${error},`);
+      console.error(`Error reading sessions directory: ${error.message}`);
+      throw error;
     }
   }
 
@@ -95,7 +109,7 @@ export class Helper {
       console.log("Deleting Sessions...");
       files.forEach((file) => {
         fs.rm(
-          `${path.join(path.resolve("sessions"), file)}`,
+          `${path.join(path.resolve(sessionName), file)}`,
           { recursive: true },
           (err) => {
             if (err) throw err;
@@ -104,7 +118,8 @@ export class Helper {
       });
       console.info("Sessions reset successfully");
     } catch (error) {
-      throw Error(`Error deleting session files: ${error},`);
+      console.error(`Error deleting session files: ${error.message}`);
+      throw error;
     }
   }
 
@@ -117,7 +132,8 @@ export class Helper {
       });
       return dirPath;
     } catch (error) {
-      throw Error(`Error deleting session files: ${error},`);
+      console.error(`Error creating directory: ${error.message}`);
+      throw error;
     }
   }
 }

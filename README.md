@@ -21,6 +21,9 @@ Telegram web apps query getter, to get query data provided by telegram when auth
 4. Create sessions directory ```mkdir sessions```
 5. to start the app run `npm run start`
 
+## Preview
+![](Preview.gif)
+
 ## Note
 
 you can see `bot_url_list.js` for the example of bot username and url.
