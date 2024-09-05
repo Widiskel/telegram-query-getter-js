@@ -1,8 +1,6 @@
 import logger from "../utils/logger.js";
 import { Helper } from "../utils/helper.js";
-import input from "input"; // npm i input
-import { botUrlList } from "../utils/bot_url_list.js";
-import { Api, TelegramClient } from "telegram";
+import { Api } from "telegram";
 import { FloodWaitError } from "telegram/errors/RPCErrorList.js";
 
 export class Core {
@@ -16,45 +14,15 @@ export class Core {
   bot;
   /** @type {any} */
   url;
-  /** @type {any} */
-  user;
+  /** @type {boolean} */
+  useDefaultQueryType;
 
-  constructor(client, session) {
+  constructor(client, session, bot, url, useDefaultQueryType) {
     this.client = client;
     this.session = session;
-  }
-
-  async mode() {
-    const mode = await input.text(
-      "Connect Mode : \n1. Manual \n2. List \n\nInput your choice : "
-    );
-
-    if (mode == 1) {
-      return true;
-    } else if (mode == 2) {
-      return false;
-    } else {
-      console.error("Invalid choice, Please try again");
-      return await this.mode();
-    }
-  }
-
-  async botList() {
-    let botOptions = "Bot List:\n";
-    botUrlList.forEach((item, index) => {
-      botOptions += `${index + 1}. ${item.bot}\n`;
-    });
-
-    const bot = await input.text(`${botOptions}\nInput your choice: `);
-    const chosenBot = botUrlList[parseInt(bot) - 1];
-
-    if (chosenBot) {
-      this.bot = chosenBot.bot;
-      this.url = chosenBot.url;
-    } else {
-      console.error("Invalid choice. Please try again.");
-      await this.botList();
-    }
+    this.bot = bot;
+    this.url = url;
+    this.useDefaultQueryType = useDefaultQueryType;
   }
 
   async resolvePeer() {
@@ -91,29 +59,12 @@ export class Core {
     try {
       logger.info(`Session ${this.session} - Processing`);
       this.user = await this.client.getMe();
-      console.log("User Phone : " + this.user.phone);
-
-      if (await this.mode()) {
-        this.bot = await input.text("Enter bot username you want to connect?");
-        this.url = await input.text("Enter bot Web apps URL you want to connect?");
-      } else {
-        await this.botList();
-      }
 
       if (!this.bot || !this.url) {
         throw new Error("You need to set Bot Username and Bot Web Apps URL");
       }
 
-      const user = await this.client.getMe();
-      console.log("USER INFO");
-      console.log("Username : " + user.username);
-      console.log("Phone    : " + user.phone);
-      console.log();
-
       await this.resolvePeer();
-      console.log("PEER INFO");
-      console.log(`BOT    :  ${this.peer ? this.peer.username : "??"}`);
-      console.log();
       logger.info(`Session ${this.session} - Connecting to Webview`);
       
       const webView = await this.client.invoke(
@@ -128,26 +79,21 @@ export class Core {
       logger.info(`Session ${this.session} - Webview Connected`);
 
       const authUrl = webView.url;
-
-      const type = await input.text(
-        "Select Query Result Type ?\n \n1. URI Component \n2. JSON String\n3. Init Params (DEFAULT)\n \nPlease select result type :"
-      );
-
-      const tgData = Helper.getTelegramQuery(authUrl, type);
-      console.log();
-      console.log("WebView URL:", authUrl);
-      console.log();
-      console.log("TG Web App Data : " + tgData);
-      console.log();
-      logger.info(`Session ${this.session} Data - ${tgData}`);
-      logger.info(`Session ${this.session} - Complete`);
-
-      await this.client.disconnect();
-      logger.info(`BOT FINISH`);
+      const tgData = Helper.getTelegramQuery(authUrl, this.useDefaultQueryType);
+      
+      return tgData; // Return query data for aggregation
     } catch (error) {
       console.error("Error during process execution:", error);
       logger.error(`Session ${this.session} Error - ${error.message}`);
       throw error;
+    } finally {
+      try {
+        await this.client.disconnect();
+        logger.info(`Session ${this.session} - Client disconnected`);
+      } catch (disconnectError) {
+        console.error("Error disconnecting client:", disconnectError);
+        logger.error(`Session ${this.session} - Error disconnecting client: ${disconnectError}`);
+      }
     }
   }
 }
