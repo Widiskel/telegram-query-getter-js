@@ -34,6 +34,11 @@ export const botUrlList = [
     bot : "realgoats_bot",
     url : "https://dev-api.goatsbot.xyz",
   },
+  //TOMARKET
+  {
+    bot : "Tomarket_ai_bot",
+    url : "https://api-web.tomarket.ai",
+  },
   //#ISI DENGAN DATA BOT YANG INGING DITAMBAHKAN
   // {
   //   bot: "",
