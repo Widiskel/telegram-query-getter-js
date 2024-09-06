@@ -2,7 +2,7 @@ export const botUrlList = [
   //BLUM
   {
     bot: "BlumCryptoBot",
-    url: "https://gateway.blum.codes/",
+    url: "https://user-domain.blum.codes/api/v1/auth/provider/PROVIDER_TELEGRAM_MINI_APP",
   },
   //CatsGang
   {
